@@ -33,9 +33,9 @@ class Lexer
       when /[0-9]/
         return {type: 'INTEGER', value: integer}
       when '+', '-', '*', '/'
-        operater = @current_char
+        operator = @current_char
         advance
-        return {type: operater, value: operater}
+        return {type: operator, value: operator}
       end
 
       advance
