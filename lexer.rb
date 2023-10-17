@@ -24,22 +24,27 @@ class Lexer
     result.to_i
   end
 
-  def get_next_token
-    while !@current_char.nil?
+  def operator
+    operator = @current_char
+    advance
+    operator
+  end
+
+  # rubocop:disable Metrics/MethodLength
+  def next_token
+    until @current_char.nil?
       case @current_char
       when /\s/
         skip_whitespace
         next
       when /[0-9]/
-        return {type: 'INTEGER', value: integer}
+        return { type: 'INTEGER', value: integer }
       when '+', '-', '*', '/'
-        operator = @current_char
-        advance
-        return {type: operator, value: operator}
+        return { type: operator, value: operator }
       end
-
       advance
     end
-    {type: 'EOF', value: nil}
+    { type: 'EOF', value: nil }
   end
+  # rubocop:enable Metrics/MethodLength
 end

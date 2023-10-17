@@ -4,17 +4,15 @@ require './ast'
 class Parser
   def initialize(lexer)
     @lexer = lexer
-    @current_token = @lexer.get_next_token
+    @current_token = @lexer.next_token
   end
 
   # 現在のトークンが数値であればそれを返す
   def factor
     token = @current_token
-    if @current_token[:type] == 'INTEGER'
-      @current_token = @lexer.get_next_token
-    else
-      raise StandardError, 'Invalid syntax'
-    end
+    raise StandardError, 'Invalid syntax' unless @current_token[:type] == 'INTEGER'
+
+    @current_token = @lexer.next_token
     Num.new(token)
   end
 
@@ -24,7 +22,7 @@ class Parser
 
     while %w[* /].include? @current_token[:type]
       token = @current_token
-      @current_token = @lexer.get_next_token
+      @current_token = @lexer.next_token
       node = BinOp.new(node, token, factor)
     end
 
@@ -38,7 +36,7 @@ class Parser
 
     while %w[+ -].include? @current_token[:type]
       token = @current_token
-      @current_token = @lexer.get_next_token
+      @current_token = @lexer.next_token
       node = BinOp.new(node, token, term)
     end
 
@@ -46,35 +44,38 @@ class Parser
   end
 
   def eval
-  tree = parse
-  eval_ast(tree)
+    tree = parse
+    eval_ast(tree)
   end
 
   def eval_ast(node)
-    if node.is_a?(BinOp)
-      left_value = eval_ast(node.left)
-      right_value = eval_ast(node.right)
-
-      case node.operator[:type]
-      when '+' then left_value + right_value
-      when '-' then left_value - right_value
-      when '*' then left_value * right_value
-      when '/' then left_value / right_value
-      else
-        raise "Unknown operator: #{node.operator[:type]}"
-      end
-    elsif node.is_a?(Num)
+    case node
+    when BinOp
+      eval_bin_op(node)
+    when Num
       node.value
     else
       raise "Unknow AST node type: #{node.class}"
     end
   end
 
+  def eval_bin_op(node)
+    left_value = eval_ast(node.left)
+    right_value = eval_ast(node.right)
+
+    case node.operator[:type]
+    when '+' then left_value + right_value
+    when '-' then left_value - right_value
+    when '*' then left_value * right_value
+    when '/' then left_value / right_value
+    else
+      raise "Unknown operator: #{node.operator[:type]}"
+    end
+  end
+
   def parse
     ast = expression
-    if @current_token[:type] != 'EOF'
-      error
-    end
+    error if @current_token[:type] != 'EOF'
     ast
   end
 end
