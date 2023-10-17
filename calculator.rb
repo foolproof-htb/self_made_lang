@@ -6,6 +6,6 @@ class Calculator
   def evaluate(expression)
     lexer = Lexer.new(expression)
     parser = Parser.new(lexer)
-    parser.parse
+    parser.eval
   end
 end

@@ -1,3 +1,5 @@
+require './ast'
+
 # 構文解析：Lexer が生成したトークンをもとに構文木を構築する
 class Parser
   def initialize(lexer)
@@ -5,63 +7,74 @@ class Parser
     @current_token = @lexer.get_next_token
   end
 
-  def error
-    raise StandardError, 'Invalid syntax'
-  end
-
-  # 現在のトークンが期待される指定トークンと一致しているか確認する
-  def eat(token_type)
-    if @current_token[:type] == token_type
-      @current_token = @lexer.get_next_token
-    else
-      error
-    end
-  end
-
   # 現在のトークンが数値であればそれを返す
   def factor
     token = @current_token
-    eat('INTEGER')
-    token[:value]
+    if @current_token[:type] == 'INTEGER'
+      @current_token = @lexer.get_next_token
+    else
+      raise StandardError, 'Invalid syntax'
+    end
+    Num.new(token)
   end
 
   # 乗算・除算が現れる間呼ばれる
   def term
-    result = factor
+    node = factor
 
     while %w[* /].include? @current_token[:type]
       token = @current_token
       @current_token = @lexer.get_next_token
-      if token[:type] == '*'
-        result *= factor
-      elsif token[:type] == '/'
-        result /= factor
-      end
+      node = BinOp.new(node, token, factor)
     end
 
-    result
+    node
   end
 
   # 加算・減算が現れる間呼ばれる
   # 加数・減数として term メソッドを呼ぶことで、乗算・除算を先に行う
-  # ただし現状では加減算のあとの乗除算は判断できない
   def expression
-    result = term
+    node = term
 
     while %w[+ -].include? @current_token[:type]
       token = @current_token
       @current_token = @lexer.get_next_token
-      if token[:type] == '+'
-        result += term
-      elsif token[:token] == '/'
-        result -= term
-      end
+      node = BinOp.new(node, token, term)
     end
 
-    result
+    node
+  end
+
+  def eval
+  tree = parse
+  eval_ast(tree)
+  end
+
+  def eval_ast(node)
+    if node.is_a?(BinOp)
+      left_value = eval_ast(node.left)
+      right_value = eval_ast(node.right)
+
+      case node.operator[:type]
+      when '+' then left_value + right_value
+      when '-' then left_value - right_value
+      when '*' then left_value * right_value
+      when '/' then left_value / right_value
+      else
+        raise "Unknown operator: #{node.operator[:type]}"
+      end
+    elsif node.is_a?(Num)
+      node.value
+    else
+      raise "Unknow AST node type: #{node.class}"
+    end
   end
 
   def parse
-    expression
+    ast = expression
+    if @current_token[:type] != 'EOF'
+      error
+    end
+    ast
   end
 end
