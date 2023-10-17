@@ -6,10 +6,25 @@ class Lexer
     @current_char = @input[@position]
   end
 
-  def advance
-    @position += 1
-    @current_char = @position < @input.length ? @input[@position] : nil
+  # rubocop:disable Metrics/MethodLength
+  def next_token
+    until @current_char.nil?
+      case @current_char
+      when /\s/
+        skip_whitespace
+        next
+      when /[0-9]/
+        return { type: 'INTEGER', value: integer }
+      when '+', '-', '*', '/'
+        return { type: operator, value: operator }
+      end
+      advance
+    end
+    { type: 'EOF', value: nil }
   end
+  # rubocop:enable Metrics/MethodLength
+
+  private
 
   def skip_whitespace
     advance while @current_char =~ /\s/
@@ -30,21 +45,8 @@ class Lexer
     operator
   end
 
-  # rubocop:disable Metrics/MethodLength
-  def next_token
-    until @current_char.nil?
-      case @current_char
-      when /\s/
-        skip_whitespace
-        next
-      when /[0-9]/
-        return { type: 'INTEGER', value: integer }
-      when '+', '-', '*', '/'
-        return { type: operator, value: operator }
-      end
-      advance
-    end
-    { type: 'EOF', value: nil }
+  def advance
+    @position += 1
+    @current_char = @position < @input.length ? @input[@position] : nil
   end
-  # rubocop:enable Metrics/MethodLength
 end

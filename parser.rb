@@ -7,29 +7,20 @@ class Parser
     @current_token = @lexer.next_token
   end
 
-  # 現在のトークンが数値であればそれを返す
-  def factor
-    token = @current_token
-    raise StandardError, 'Invalid syntax' unless @current_token[:type] == 'INTEGER'
-
-    @current_token = @lexer.next_token
-    Num.new(token)
+  def eval
+    tree = parse
+    eval_ast(tree)
   end
 
-  # 乗算・除算が現れる間呼ばれる
-  def term
-    node = factor
+  private
 
-    while %w[* /].include? @current_token[:type]
-      token = @current_token
-      @current_token = @lexer.next_token
-      node = BinOp.new(node, token, factor)
-    end
-
-    node
+  def parse
+    ast = expression
+    syntax_error if @current_token[:type] != 'EOF'
+    ast
   end
 
-  # 加算・減算が現れる間呼ばれる
+  # 式のノードを返す
   # 加数・減数として term メソッドを呼ぶことで、乗算・除算を先に行う
   def expression
     node = term
@@ -43,11 +34,33 @@ class Parser
     node
   end
 
-  def eval
-    tree = parse
-    eval_ast(tree)
+  # 乗算・除算のノードを生成して返す
+  def term
+    node = factor
+
+    while %w[* /].include? @current_token[:type]
+      token = @current_token
+      @current_token = @lexer.next_token
+      node = BinOp.new(node, token, factor)
+    end
+
+    node
   end
 
+  # 数値のノードを生成して返す
+  def factor
+    token = @current_token
+    syntax_error unless @current_token[:type] == 'INTEGER'
+
+    @current_token = @lexer.next_token
+    Num.new(token)
+  end
+
+  def syntax_error
+    raise StandardError, 'Invalid syntax'
+  end
+
+  # 構文木に沿って式を実行する
   def eval_ast(node)
     case node
     when BinOp
@@ -71,11 +84,5 @@ class Parser
     else
       raise "Unknown operator: #{node.operator[:type]}"
     end
-  end
-
-  def parse
-    ast = expression
-    error if @current_token[:type] != 'EOF'
-    ast
   end
 end
