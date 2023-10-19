@@ -16,6 +16,7 @@ class Lexer
       when /[0-9]/
         return { type: 'INTEGER', value: integer }
       when '+', '-', '*', '/'
+        operator = fetch_operator
         return { type: operator, value: operator }
       end
       advance
@@ -39,7 +40,7 @@ class Lexer
     result.to_i
   end
 
-  def operator
+  def fetch_operator
     operator = @current_char
     advance
     operator
