@@ -1,6 +1,6 @@
 require './ast'
 
-# 構文解析：Lexer が生成したトークンをもとに構文木を構築する
+# 構文解析：Lexer が生成したトークンをもとに構文木を構築して評価する
 class Parser
   def initialize(lexer)
     @lexer = lexer
@@ -21,7 +21,7 @@ class Parser
   end
 
   # 式のノードを返す
-  # 加数・減数として term メソッドを呼ぶことで、乗算・除算を先に行う
+  # 次のノードとして term メソッドを呼ぶことで階層を作り、乗除算の優先順位を上げる
   def expression
     node = term
 

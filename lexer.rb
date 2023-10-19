@@ -14,7 +14,7 @@ class Lexer
         skip_whitespace
         next
       when /[0-9]/
-        return { type: 'INTEGER', value: integer }
+        return { type: 'INTEGER', value: fetch_integer }
       when '+', '-', '*', '/'
         operator = fetch_operator
         return { type: operator, value: operator }
@@ -31,7 +31,7 @@ class Lexer
     advance while @current_char =~ /\s/
   end
 
-  def integer
+  def fetch_integer
     result = ''
     while @current_char =~ /\d/
       result += @current_char
